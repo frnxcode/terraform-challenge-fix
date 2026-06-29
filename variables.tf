@@ -33,14 +33,12 @@ variable "instance_type" {
   default = "t3.micro"
 }
 
-variable "db_password" {
-  description = "Database master password"
+variable "allowed_cidr" {
+  description = "CIDR block permitted to SSH to web instance"
   type        = string
-  default     = "P@ssw0rd123!"
+  default     = "10.0.0.0/8"
 }
 
-variable "enable_logging" {
-  description = "Whether to enable access logging"
-  type        = bool
-  default     = false
-}
+# FIX: removed variable "db_password" — declared but never used
+# FIX: removed variable "enable_logging" — declared but never used
+# NOTE: db_password also had a hardcoded plaintext secret as its default value — never do this
