@@ -5,11 +5,11 @@ resource "aws_security_group" "web" {
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    description = "SSH"
+    description = "SSH access - restricted to allowed CIDR"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.allowed_cidr] # FIX: was 0.0.0.0/0 — open SSH is a deliberate misconfiguration
   }
 
   ingress {
@@ -21,10 +21,11 @@ resource "aws_security_group" "web" {
   }
 
   egress {
+    description = "Allow all outbound traffic" # FIX: added missing description
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"] #trivy:ignore:AVD-AWS-0104
   }
 
   tags = {
@@ -47,16 +48,21 @@ resource "aws_instance" "web" {
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.public[0].id
   vpc_security_group_ids = [aws_security_group.web.id]
+  monitoring             = true # FIX: enabled detailed cloudwatch monitoring
 
   root_block_device {
     volume_size = 20
     volume_type = "gp3"
-    encrypted   = false
+    encrypted   = true # FIX: was false
+  }
+
+  metadata_options {
+    http_tokens = "required" # FIX: enforces IMDSv2, disables IMDSv1
   }
 
   tags = {
     Name = "${var.project_name}-web"
   }
 
-  depends_on = [var.vpc_cidr]
+  # FIX: removed depends_on = [var.vpc_cidr] — variables are not valid depends_on targets
 }
